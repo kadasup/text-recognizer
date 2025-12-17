@@ -1,0 +1,32 @@
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [ main ]
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout 🛎️
+        uses: actions/checkout@v4
+
+      - name: Install and Build 🔧
+        run: |
+          npm install
+          npm run build
+        env:
+           # 這裡會讀取您在 GitHub Settings > Secrets 設定的變數
+           # 如果沒設定，API 連線會失敗，但網頁仍能顯示
+           VITE_API_URL: ${{ secrets.VITE_API_URL }}
+           VITE_AZURE_API_KEY: ${{ secrets.VITE_AZURE_API_KEY }} 
+           VITE_AZURE_ENDPOINT: ${{ secrets.VITE_AZURE_ENDPOINT }}
+
+      - name: Deploy 🚀
+        uses: JamesIves/github-pages-deploy-action@v4
+        with:
+          folder: dist
+          branch: gh-pages
