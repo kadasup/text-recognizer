@@ -22,7 +22,7 @@ jobs:
            # 這裡會讀取您在 GitHub Settings > Secrets 設定的變數
            # 如果沒設定，API 連線會失敗，但網頁仍能顯示
            VITE_API_URL: ${{ secrets.VITE_API_URL }}
-           VITE_AZURE_API_KEY: ${{ secrets.VITE_AZURE_API_KEY }} 
+           # VITE_AZURE_API_KEY: ${{ secrets.VITE_AZURE_API_KEY }}  <-- Removed to prevent GitHub Secret Scanning block
            VITE_AZURE_ENDPOINT: ${{ secrets.VITE_AZURE_ENDPOINT }}
 
       - name: Deploy 🚀
