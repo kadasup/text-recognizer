@@ -49,7 +49,6 @@ function App() {
                 }));
                 // Auto-save to history
                 saveHistory(file.name, text);
-                saveHistory(file.name, text);
             } catch (err) {
                 addLog(`Error processing ${file.name}: ${err.message}`);
                 setResults(prev => ({
