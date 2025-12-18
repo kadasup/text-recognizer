@@ -1,3 +1,5 @@
+const API_URL = import.meta.env.VITE_API_URL || ""; // Empty means use proxy in dev
+
 export const convertFileToBase64 = (file) => {
     return new Promise((resolve, reject) => {
         const reader = new FileReader();
@@ -7,78 +9,31 @@ export const convertFileToBase64 = (file) => {
     });
 };
 
-export const identifyText = async (apiKey, fileBase64, prompt = "Identify and transcribe all text in this image. preserve formatting.", customEndpoint = null) => {
+export const identifyText = async (apiKey, fileBase64, prompt = "Identify and transcribe all text in this image. preserve formatting.") => {
     try {
-        // Azure Configuration
-        let baseEndpoint = customEndpoint || import.meta.env.VITE_AZURE_ENDPOINT || "";
+        // apiKey argument is now ignored as we use backend secrets
 
-        // Ensure endpoint ends with a slash and is a valid URL base
-        if (baseEndpoint && !baseEndpoint.endsWith('/')) {
-            baseEndpoint += '/';
-        }
+        console.log("Sending request to backend API...");
 
-        const DEPLOYMENT = import.meta.env.VITE_AZURE_DEPLOYMENT || "gpt-4o"; // Standard name for current vision model
-        const API_VERSION = import.meta.env.VITE_AZURE_API_VERSION || "2024-02-15-preview"; // Stable version for vision
-
-        if (!baseEndpoint) {
-            throw new Error("Azure Endpoint is missing. Please set it in Settings.");
-        }
-
-        if (!apiKey) {
-            throw new Error("Azure API Key is missing. Please set it in Settings.");
-        }
-
-        let finalDataUrl = fileBase64;
-        if (!fileBase64.startsWith('data:')) {
-            finalDataUrl = `data:image/jpeg;base64,${fileBase64}`;
-        }
-
-        const url = `${baseEndpoint}openai/deployments/${DEPLOYMENT}/chat/completions?api-version=${API_VERSION}`;
-
-        const response = await fetch(url, {
-            method: "POST",
+        const response = await fetch(`${API_URL}/api/analyze`, {
+            method: 'POST',
             headers: {
-                "Content-Type": "application/json",
-                "api-key": apiKey
+                'Content-Type': 'application/json'
             },
             body: JSON.stringify({
-                messages: [
-                    {
-                        role: "system",
-                        content: "You are an AI assistant that identifies and transcribes text from images. Output only the transcribed text."
-                    },
-                    {
-                        role: "user",
-                        content: [
-                            { type: "text", text: prompt },
-                            {
-                                type: "image_url",
-                                image_url: {
-                                    url: finalDataUrl
-                                }
-                            }
-                        ]
-                    }
-                ],
-                max_completion_tokens: 2000,
-                stream: false
+                image: fileBase64,
+                prompt: prompt
             })
         });
 
-        if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.error?.message || "Azure API Request Failed");
-        }
-
         const data = await response.json();
-        console.log("Azure API Response:", data); // Debug log
 
-        if (!data.choices || !data.choices[0] || !data.choices[0].message) {
-            console.error("Unexpected API response structure:", data);
-            throw new Error("API response is empty or invalid: " + JSON.stringify(data));
+        if (!response.ok) {
+            console.error("Backend API Error:", data);
+            throw new Error(data.error || "Failed to analyze image");
         }
 
-        return data.choices[0].message.content;
+        return data.text;
 
     } catch (error) {
         console.error("AI Service Error:", error);

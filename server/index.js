@@ -154,6 +154,72 @@ app.delete('/api/history/:id', async (req, res) => {
     }
 });
 
+// POST /api/analyze - Proxy to Azure OpenAI
+app.post('/api/analyze', async (req, res) => {
+    try {
+        const { image, prompt } = req.body;
+
+        const ENDPOINT = process.env.VITE_AZURE_ENDPOINT;
+        const API_KEY = process.env.VITE_AZURE_API_KEY;
+        const DEPLOYMENT = process.env.VITE_AZURE_DEPLOYMENT || "gpt-5.2"; // Fallback if not set
+        const API_VERSION = process.env.VITE_AZURE_API_VERSION || "2025-04-01-preview";
+
+        if (!ENDPOINT || !API_KEY) {
+            console.error("Missing Azure Credentials on Server");
+            return res.status(500).json({ error: "Server Configuration Error: Missing Azure Credentials" });
+        }
+
+        const url = `${ENDPOINT}openai/deployments/${DEPLOYMENT}/chat/completions?api-version=${API_VERSION}`;
+
+        const response = await fetch(url, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'api-key': API_KEY
+            },
+            body: JSON.stringify({
+                messages: [
+                    {
+                        role: "system",
+                        content: "You are an AI assistant that identifies and transcribes text from images. Output only the transcribed text."
+                    },
+                    {
+                        role: "user",
+                        content: [
+                            { type: "text", text: prompt || "Identify and transcribe all text in this image. preserve formatting." },
+                            {
+                                type: "image_url",
+                                image_url: {
+                                    url: image // Base64 or URL
+                                }
+                            }
+                        ]
+                    }
+                ],
+                max_completion_tokens: 2000,
+                stream: false
+            })
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            console.error("Azure API Error:", data);
+            return res.status(response.status).json({ error: data.error?.message || "Azure API Failed" });
+        }
+
+        if (!data.choices || !data.choices[0] || !data.choices[0].message) {
+            return res.status(500).json({ error: "Invalid response from Azure AI" });
+        }
+
+        res.json({ text: data.choices[0].message.content });
+
+    } catch (err) {
+        console.error("Analyze Error:", err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
 app.listen(PORT, () => {
     console.log(`Backend server running on port ${PORT}`);
     console.log(`Storage Mode: ${USE_MONGO ? 'MongoDB Atlas' : 'Local JSON File'}`);

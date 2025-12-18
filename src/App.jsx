@@ -11,9 +11,6 @@ const DEFAULT_API_KEY = import.meta.env.VITE_AZURE_API_KEY || "";
 const DEFAULT_ENDPOINT = import.meta.env.VITE_AZURE_ENDPOINT || "";
 
 function App() {
-    const [apiKey, setApiKey] = useState(DEFAULT_API_KEY);
-    const [endpoint, setEndpoint] = useState(DEFAULT_ENDPOINT);
-    const [showSettings, setShowSettings] = useState(false);
     const [files, setFiles] = useState([]);
     const [results, setResults] = useState({});
     const [isProcessing, setIsProcessing] = useState(false);
@@ -33,13 +30,7 @@ function App() {
     };
 
     const handleFilesSelected = async (selectedFiles) => {
-        addLog(`HandleFilesSelected: ${selectedFiles.length} files. Key present: ${!!apiKey}`);
-
-        if (!apiKey) {
-            addLog("Error: API Key missing.");
-            setError("請先設定 API 金鑰。");
-            return;
-        }
+        addLog(`HandleFilesSelected: ${selectedFiles.length} files.`);
 
         setError(null);
         setFiles(selectedFiles);
@@ -51,7 +42,7 @@ function App() {
         for (const file of selectedFiles) {
             try {
                 const base64 = await convertFileToBase64(file);
-                const text = await identifyText(apiKey, base64, undefined, endpoint);
+                const text = await identifyText(null, base64);
                 setResults(prev => ({
                     ...prev,
                     [file.name]: { status: 'success', text }
@@ -71,8 +62,6 @@ function App() {
     };
 
     const handleRetry = async (file) => {
-        if (!apiKey) return;
-
         setRetryingFiles(prev => new Set(prev).add(file.name));
         // Reset status for this file to force loading state if needed, or just rely on retryingFiles
         setResults(prev => ({
@@ -82,7 +71,7 @@ function App() {
 
         try {
             const base64 = await convertFileToBase64(file);
-            const text = await identifyText(apiKey, base64, undefined, endpoint);
+            const text = await identifyText(null, base64);
             setResults(prev => ({
                 ...prev,
                 [file.name]: { status: 'success', text }
@@ -145,13 +134,6 @@ function App() {
                         <Clock className="w-4 h-4" />
                         歷史紀錄
                     </button>
-                    <button
-                        onClick={() => setShowSettings(!showSettings)}
-                        className={`p-2 rounded-lg transition-colors border border-white/10 ${showSettings ? 'bg-blue-600/20 text-blue-400' : 'bg-white/5 text-gray-300 hover:text-white'}`}
-                        title="設定"
-                    >
-                        <RotateCw className={`w-4 h-4 ${showSettings ? 'rotate-180' : ''} transition-transform`} />
-                    </button>
                     {Object.keys(results).length > 0 && !isProcessing && (
                         <button
                             onClick={handleMerge}
@@ -188,48 +170,7 @@ function App() {
             </AnimatePresence>
 
             {/* Settings Panel */}
-            <AnimatePresence>
-                {showSettings && (
-                    <motion.div
-                        initial={{ opacity: 0, height: 0 }}
-                        animate={{ opacity: 1, height: 'auto' }}
-                        exit={{ opacity: 0, height: 0 }}
-                        className="overflow-hidden mb-8"
-                    >
-                        <div className="glass-panel p-6 border-blue-500/20 bg-blue-500/5">
-                            <h3 className="text-sm font-semibold text-blue-400 mb-4 flex items-center gap-2">
-                                <Sparkles className="w-4 h-4" />
-                                API 設定
-                            </h3>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div className="space-y-2">
-                                    <label className="text-xs text-gray-400 block ml-1">Azure OpenAI API Key</label>
-                                    <input
-                                        type="password"
-                                        value={apiKey}
-                                        onChange={(e) => setApiKey(e.target.value)}
-                                        placeholder="輸入 API 金鑰..."
-                                        className="w-full bg-black/40 border border-white/10 rounded-lg px-4 py-2 text-sm focus:outline-none focus:border-blue-500/50 transition-colors"
-                                    />
-                                </div>
-                                <div className="space-y-2">
-                                    <label className="text-xs text-gray-400 block ml-1">Azure Endpoint</label>
-                                    <input
-                                        type="text"
-                                        value={endpoint}
-                                        onChange={(e) => setEndpoint(e.target.value)}
-                                        placeholder="https://your-resource.openai.azure.com/"
-                                        className="w-full bg-black/40 border border-white/10 rounded-lg px-4 py-2 text-sm focus:outline-none focus:border-blue-500/50 transition-colors"
-                                    />
-                                </div>
-                            </div>
-                            <p className="mt-4 text-[10px] text-gray-500">
-                                * 設定將儲存在當前階段。如果您在 .env 中有設定 VITE_AZURE_API_KEY，系統會優先載入。
-                            </p>
-                        </div>
-                    </motion.div>
-                )}
-            </AnimatePresence>
+
 
             {/* API Key Input */}
 
@@ -369,7 +310,7 @@ function App() {
 
             {/* History Sidebar */}
             <HistorySidebar isOpen={isHistoryOpen} onClose={() => setIsHistoryOpen(false)} />
-        </div>
+        </div >
     );
 }
 
