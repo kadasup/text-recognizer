@@ -2,7 +2,7 @@ import React, { useRef, useEffect } from 'react';
 import { FolderUp, FileText, Image as ImageIcon, Loader2 } from 'lucide-react';
 import { motion } from 'framer-motion';
 
-const FileUploader = ({ onFilesSelected, isProcessing }) => {
+const FileUploader = ({ onFilesSelected, isProcessing, onLog }) => {
     const inputRef = useRef(null);
 
     useEffect(() => {
@@ -27,8 +27,11 @@ const FileUploader = ({ onFilesSelected, isProcessing }) => {
         });
 
         if (files.length > 0) {
+            if (onLog) onLog(`FileUploader: Found ${files.length} valid files.`);
             onFilesSelected(files);
         } else {
+            if (onLog) onLog(`FileUploader: Found 0 files. Raw count: ${e.target.files.length}`);
+
             // Optional: Alert user if no valid files found
             if (e.target.files.length > 0) {
                 // alert("在此資料夾中找不到支援的圖片檔案。"); // Already covered by debug alert

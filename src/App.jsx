@@ -23,8 +23,20 @@ function App() {
     const [retryingFiles, setRetryingFiles] = useState(new Set());
     const [isHistoryOpen, setIsHistoryOpen] = useState(false);
 
+    // Debug Logging
+    const [debugMode, setDebugMode] = useState(false);
+    const [logs, setLogs] = useState([]);
+
+    const addLog = (msg) => {
+        const timestamp = new Date().toLocaleTimeString();
+        setLogs(prev => [`[${timestamp}] ${msg}`, ...prev].slice(0, 50));
+    };
+
     const handleFilesSelected = async (selectedFiles) => {
+        addLog(`HandleFilesSelected: ${selectedFiles.length} files. Key present: ${!!apiKey}`);
+
         if (!apiKey) {
+            addLog("Error: API Key missing.");
             setError("請先設定 API 金鑰。");
             return;
         }
@@ -46,7 +58,9 @@ function App() {
                 }));
                 // Auto-save to history
                 saveHistory(file.name, text);
+                saveHistory(file.name, text);
             } catch (err) {
+                addLog(`Error processing ${file.name}: ${err.message}`);
                 setResults(prev => ({
                     ...prev,
                     [file.name]: { status: 'error', text: err.message }
@@ -221,7 +235,7 @@ function App() {
 
 
             {/* Main Content */}
-            <FileUploader onFilesSelected={handleFilesSelected} isProcessing={isProcessing} />
+            <FileUploader onFilesSelected={handleFilesSelected} isProcessing={isProcessing} onLog={addLog} />
 
             {/* Results Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-12">
@@ -337,7 +351,20 @@ function App() {
             </AnimatePresence>
             {/* Footer */}
             <footer className="w-full text-center py-6 text-gray-500 text-sm mt-auto">
-                Version 1.0.0
+                <div onClick={() => setDebugMode(prev => !prev)} className="cursor-pointer hover:text-white transition-colors">
+                    Version 1.1.0
+                </div>
+                {debugMode && (
+                    <div className="mt-4 p-4 bg-black/80 font-mono text-xs text-left h-48 overflow-y-auto border border-white/20 rounded-lg">
+                        <div className="flex justify-between items-center mb-2 border-b border-white/20 pb-2">
+                            <span className="text-yellow-400">Debug Console</span>
+                            <button onClick={() => setLogs([])} className="text-gray-400 hover:text-white">Clear</button>
+                        </div>
+                        {logs.map((log, i) => (
+                            <div key={i} className="text-gray-300 border-b border-white/5 py-1">{log}</div>
+                        ))}
+                    </div>
+                )}
             </footer>
 
             {/* History Sidebar */}
