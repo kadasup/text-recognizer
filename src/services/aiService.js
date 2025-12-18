@@ -7,26 +7,33 @@ export const convertFileToBase64 = (file) => {
     });
 };
 
-export const identifyText = async (apiKey, fileBase64, prompt = "Identify and transcribe all text in this image. preserve formatting.") => {
+export const identifyText = async (apiKey, fileBase64, prompt = "Identify and transcribe all text in this image. preserve formatting.", customEndpoint = null) => {
     try {
-        // Azure Configuration - these usually come from env, but can use passed apiKey if needed
-        const ENDPOINT = import.meta.env.VITE_AZURE_ENDPOINT || "";
-        const DEPLOYMENT = import.meta.env.VITE_AZURE_DEPLOYMENT || "gpt-5.2";
-        const API_VERSION = import.meta.env.VITE_AZURE_API_VERSION || "2025-04-01-preview";
+        // Azure Configuration
+        let baseEndpoint = customEndpoint || import.meta.env.VITE_AZURE_ENDPOINT || "";
 
-        // Remove data URL prefix if present to keep consistency, though OpenAI payload usually takes full data URL for some libraries, 
-        // passing base64 directly to image_url with spec is safer.
-        // Actually OpenAI API expects "data:image/jpeg;base64,{base64_string}" in url field.
-        // So we need to ensure the prefix IS present.
+        // Ensure endpoint ends with a slash and is a valid URL base
+        if (baseEndpoint && !baseEndpoint.endsWith('/')) {
+            baseEndpoint += '/';
+        }
+
+        const DEPLOYMENT = import.meta.env.VITE_AZURE_DEPLOYMENT || "gpt-4o"; // Standard name for current vision model
+        const API_VERSION = import.meta.env.VITE_AZURE_API_VERSION || "2024-02-15-preview"; // Stable version for vision
+
+        if (!baseEndpoint) {
+            throw new Error("Azure Endpoint is missing. Please set it in Settings.");
+        }
+
+        if (!apiKey) {
+            throw new Error("Azure API Key is missing. Please set it in Settings.");
+        }
 
         let finalDataUrl = fileBase64;
         if (!fileBase64.startsWith('data:')) {
-            // If we somehow got raw base64 without prefix (from previous Gemini logic edits?), add it back.
-            // Assumption: jpeg default.
             finalDataUrl = `data:image/jpeg;base64,${fileBase64}`;
         }
 
-        const url = `${ENDPOINT}openai/deployments/${DEPLOYMENT}/chat/completions?api-version=${API_VERSION}`;
+        const url = `${baseEndpoint}openai/deployments/${DEPLOYMENT}/chat/completions?api-version=${API_VERSION}`;
 
         const response = await fetch(url, {
             method: "POST",
