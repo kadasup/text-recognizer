@@ -27,13 +27,8 @@ const FileUploader = ({ onFilesSelected, isProcessing }) => {
         });
 
         if (files.length > 0) {
-            // DEBUG ALERT
-            alert(`FileUploader: Found ${files.length} valid files. Proceeding to notify parent component.`);
             onFilesSelected(files);
         } else {
-            // DEBUG ALERT
-            alert(`FileUploader: Found 0 valid files. Total files in folder: ${e.target.files.length}. Please check if files are images/pdfs.`);
-
             // Optional: Alert user if no valid files found
             if (e.target.files.length > 0) {
                 // alert("在此資料夾中找不到支援的圖片檔案。"); // Already covered by debug alert

@@ -24,16 +24,11 @@ function App() {
     const [isHistoryOpen, setIsHistoryOpen] = useState(false);
 
     const handleFilesSelected = async (selectedFiles) => {
-        // DEBUG ALERT
-        alert(`App: handleFilesSelected called with ${selectedFiles.length} files. Checking API Key...`);
-
         if (!apiKey) {
-            alert("App: API Key is missing! Setting error state.");
             setError("請先設定 API 金鑰。");
             return;
         }
 
-        alert("App: API Key Present. Starting processing...");
         setError(null);
         setFiles(selectedFiles);
         setResults({});
