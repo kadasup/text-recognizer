@@ -24,10 +24,16 @@ function App() {
     const [isHistoryOpen, setIsHistoryOpen] = useState(false);
 
     const handleFilesSelected = async (selectedFiles) => {
+        // DEBUG ALERT
+        alert(`App: handleFilesSelected called with ${selectedFiles.length} files. Checking API Key...`);
+
         if (!apiKey) {
+            alert("App: API Key is missing! Setting error state.");
             setError("請先設定 API 金鑰。");
             return;
         }
+
+        alert("App: API Key Present. Starting processing...");
         setError(null);
         setFiles(selectedFiles);
         setResults({});
@@ -162,7 +168,7 @@ function App() {
                             <X className="w-5 h-5 flex-shrink-0" />
                             <p className="text-sm font-medium">{error}</p>
                         </div>
-                        <button 
+                        <button
                             onClick={() => setError(null)}
                             className="p-1 hover:bg-white/10 rounded-lg transition-colors"
                         >
